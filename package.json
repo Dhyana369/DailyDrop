@@ -1,0 +1,17 @@
+{
+  "name": "worddrop-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot that sends a daily vocabulary word with meaning and example",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "author": "Dhyana",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "dotenv": "^16.5.0",
+    "node-cron": "^3.0.2",
+    "node-telegram-bot-api": "^0.61.0"
+  }
+}
