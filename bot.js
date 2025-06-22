@@ -21,16 +21,18 @@ async function getRandomWord() {
 async function getWordDefinition(word) {
   try {
     const res = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-    const meanings = res.data[0].meanings[0];
-    const definitionData = meanings.definitions[0];
+    const entry = res.data[0];
+    const meaning = entry.meanings[0];
+    const definition = meaning.definitions[0];
 
     return {
-      word: res.data[0].word,
-      partOfSpeech: meanings.partOfSpeech,
-      definition: definitionData.definition,
-      example: definitionData.example || 'No example found.',
-      synonyms: definitionData.synonyms || [],
-      antonyms: definitionData.antonyms || []
+      word: entry.word,
+      partOfSpeech: meaning.partOfSpeech,
+      definition: definition.definition,
+      example: definition.example || 'No example found.',
+      synonyms: definition.synonyms || [],
+      antonyms: definition.antonyms || [],
+      audio: entry.phonetics.find(p => p.audio)?.audio || null
     };
   } catch (err) {
     console.error('No definitions found for:', word);
@@ -48,33 +50,28 @@ async function sendWordOfTheDay() {
     return;
   }
 
-  let message = `🧠 Word of the Day\n\n`;
-  message += `${wordData.word} (${wordData.partOfSpeech})\n`;
-  message += `Meaning: ${wordData.definition}\n`;
-  message += `Example: ${wordData.example}\n`;
+  let message = `🧠 *Word of the Day*\n\n`;
+  message += `*${wordData.word}* (${wordData.partOfSpeech})\n`;
+  message += `*Meaning:* ${wordData.definition}\n`;
+  message += `*Example:* ${wordData.example}\n`;
 
-  if (wordData.synonyms.length > 0) {
-    message += `Synonyms: ${wordData.synonyms.join(', ')}\n`;
-  } else {
-    message += `Synonyms: None found.\n`;
+  message += `*Synonyms:* ${wordData.synonyms.length > 0 ? wordData.synonyms.join(', ') : 'None found.'}\n`;
+  message += `*Antonyms:* ${wordData.antonyms.length > 0 ? wordData.antonyms.join(', ') : 'None found.'}\n`;
+
+  if (wordData.audio) {
+    message += `🔊 [Pronunciation](${wordData.audio})\n`;
   }
 
-  if (wordData.antonyms.length > 0) {
-    message += `Antonyms: ${wordData.antonyms.join(', ')}\n`;
-  } else {
-    message += `Antonyms: None found.\n`;
-  }
-
-  bot.sendMessage(chatId, message);
+  bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
   console.log(`Sent word of the day: ${wordData.word}`);
 }
 
 console.log('Bot started and scheduled for daily message.');
 
-// Schedule daily at 9 AM (adjust timezone if needed)
+// Schedule daily at 9 AM IST (adjust if needed)
 cron.schedule('30 2 * * *', () => {
   sendWordOfTheDay();
 });
 
-// Optional: send immediately for testing (remove later)
+// Uncomment this for testing only
 // sendWordOfTheDay();
