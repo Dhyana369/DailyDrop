@@ -22,18 +22,27 @@ async function getWordDefinition(word) {
   try {
     const res = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
     const entry = res.data[0];
-    const meaning = entry.meanings[0];
-    const definition = meaning.definitions[0];
 
-    return {
-      word: entry.word,
-      partOfSpeech: meaning.partOfSpeech,
-      definition: definition.definition,
-      example: definition.example || 'No example found.',
-      synonyms: definition.synonyms || [],
-      antonyms: definition.antonyms || [],
-      audio: entry.phonetics.find(p => p.audio)?.audio || null
-    };
+    let definition = null;
+    for (const meaning of entry.meanings) {
+      for (const def of meaning.definitions) {
+        if (def.definition) {
+          definition = {
+            word: entry.word,
+            partOfSpeech: meaning.partOfSpeech,
+            definition: def.definition,
+            example: def.example || 'No example found.',
+            synonyms: def.synonyms || [],
+            antonyms: def.antonyms || [],
+            audio: entry.phonetics.find(p => p.audio)?.audio || null
+          };
+          break;
+        }
+      }
+      if (definition) break;
+    }
+
+    return definition || null;
   } catch (err) {
     console.error('No definitions found for:', word);
     return null;
@@ -54,9 +63,8 @@ async function sendWordOfTheDay() {
   message += `*${wordData.word}* (${wordData.partOfSpeech})\n`;
   message += `*Meaning:* ${wordData.definition}\n`;
   message += `*Example:* ${wordData.example}\n`;
-
-  message += `*Synonyms:* ${wordData.synonyms.length > 0 ? wordData.synonyms.join(', ') : 'None found.'}\n`;
-  message += `*Antonyms:* ${wordData.antonyms.length > 0 ? wordData.antonyms.join(', ') : 'None found.'}\n`;
+  message += `*Synonyms:* ${wordData.synonyms.length > 0 ? wordData.synonyms.slice(0, 5).join(', ') : 'None found.'}\n`;
+  message += `*Antonyms:* ${wordData.antonyms.length > 0 ? wordData.antonyms.slice(0, 5).join(', ') : 'None found.'}\n`;
 
   if (wordData.audio) {
     message += `🔊 [Pronunciation](${wordData.audio})\n`;
@@ -68,10 +76,6 @@ async function sendWordOfTheDay() {
 
 console.log('Bot started and scheduled for daily message.');
 
-// Schedule daily at 9 AM IST (adjust if needed)
 cron.schedule('30 2 * * *', () => {
   sendWordOfTheDay();
 });
-
-// Uncomment this for testing only
-// sendWordOfTheDay();
