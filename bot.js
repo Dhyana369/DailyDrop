@@ -76,6 +76,8 @@ async function sendWordOfTheDay() {
 
 console.log('Bot started and scheduled for daily message.');
 
-cron.schedule('30 2 * * *', () => {
+cron.schedule('30 3 * * *', () => {
   sendWordOfTheDay();
 });
+
+sendWordOfTheDay();
