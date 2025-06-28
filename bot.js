@@ -10,7 +10,7 @@ const bot = new TelegramBot(token, { polling: false });
 
 async function getRandomWord() {
   try {
-    const res = await axios.get('https://random-word-api.herokuapp.com/word');
+    const res = await axios.get('https://random-word-api.herokuapp.com/word?number=1');
     return res.data[0];
   } catch (err) {
     console.error('Error fetching random word:', err);
