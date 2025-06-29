@@ -5,7 +5,6 @@ const cron = require('node-cron');
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const chatId = process.env.CHAT_ID;
-
 const bot = new TelegramBot(token, { polling: false });
 
 async function getRandomWord() {
@@ -23,28 +22,25 @@ async function getWordDefinition(word) {
     const res = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
     const entry = res.data[0];
 
-    let definition = null;
     for (const meaning of entry.meanings) {
       for (const def of meaning.definitions) {
         if (def.definition) {
-          definition = {
+          return {
             word: entry.word,
             partOfSpeech: meaning.partOfSpeech,
             definition: def.definition,
             example: def.example || 'No example found.',
-            synonyms: def.synonyms || [],
-            antonyms: def.antonyms || [],
+            synonyms: def.synonyms?.slice(0, 5) || [],
+            antonyms: def.antonyms?.slice(0, 5) || [],
             audio: entry.phonetics.find(p => p.audio)?.audio || null
           };
-          break;
         }
       }
-      if (definition) break;
     }
 
-    return definition || null;
+    return null;
   } catch (err) {
-    console.error('No definitions found for:', word);
+    console.error(`No definitions found for: ${word}`);
     return null;
   }
 }
@@ -63,21 +59,20 @@ async function sendWordOfTheDay() {
   message += `*${wordData.word}* (${wordData.partOfSpeech})\n`;
   message += `*Meaning:* ${wordData.definition}\n`;
   message += `*Example:* ${wordData.example}\n`;
-  message += `*Synonyms:* ${wordData.synonyms.length > 0 ? wordData.synonyms.slice(0, 5).join(', ') : 'None found.'}\n`;
-  message += `*Antonyms:* ${wordData.antonyms.length > 0 ? wordData.antonyms.slice(0, 5).join(', ') : 'None found.'}\n`;
+  message += `*Synonyms:* ${wordData.synonyms.length ? wordData.synonyms.join(', ') : 'None found.'}\n`;
+  message += `*Antonyms:* ${wordData.antonyms.length ? wordData.antonyms.join(', ') : 'None found.'}\n`;
 
   if (wordData.audio) {
     message += `🔊 [Pronunciation](${wordData.audio})\n`;
   }
 
   bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
-  console.log(`Sent word of the day: ${wordData.word}`);
+  console.log(`✅ Sent word of the day: ${wordData.word}`);
 }
 
-console.log('Bot started and scheduled for daily message.');
+console.log('🚀 Bot started and scheduled for daily message.');
 
-cron.schedule('30 3 * * *', () => {
+// Schedule at 8:30 AM IST => 3:00 AM UTC
+cron.schedule('0 3 * * *', () => {
   sendWordOfTheDay();
 });
-
-sendWordOfTheDay();
