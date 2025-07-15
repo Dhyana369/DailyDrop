@@ -1,52 +1,78 @@
-import json
 import requests
-from datetime import datetime
-
+import random
 import os
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
-# Load word list
-with open("words.json", "r") as f:
-    words = json.load(f)
+# Pick a random word from file
+def get_random_word():
+    with open("word_list.txt", "r") as f:
+        words = f.read().splitlines()
+    return random.choice(words)
 
-# Pick today's word
-start_date = datetime(2025, 1, 1).date()
-today = datetime.now().date()
-index = (today - start_date).days % len(words)
-word = words[index]
+# Fetch data from dictionary API
+def get_word_data(word):
+    url = f"https://api.dictionaryapi.dev/api/v2/entries/en/{word}"
+    response = requests.get(url)
+    data = response.json()
 
-# Extract fields with fallback
-w = word.get("word", "N/A")
-pos = word.get("part_of_speech", "Not Available")
-mean = word.get("meaning", "Not Available")
-example = word.get("example", "Not Available")
-synonyms = ", ".join(word.get("synonyms", ["Not Available"]))
-antonyms = ", ".join(word.get("antonyms", ["Not Available"]))
-pronunciation = word.get("pronunciation", "Not Available")
+    try:
+        meaning_data = data[0]['meanings'][0]
+        definitions = meaning_data['definitions'][0]
+        phonetics = data[0]['phonetics'][0]
 
-# Format message
-message = f"""
+        word_info = {
+            "word": word,
+            "part_of_speech": meaning_data['partOfSpeech'],
+            "meaning": definitions['definition'],
+            "example": definitions.get('example', 'No example available.'),
+            "synonyms": ', '.join(definitions.get('synonyms', [])[:3]) or 'None found.',
+            "antonyms": ', '.join(definitions.get('antonyms', [])[:3]) or 'None found.',
+            "pronunciation": phonetics.get('text', '—'),
+            "audio_url": phonetics.get('audio', '')
+        }
+
+        return word_info
+    except Exception as e:
+        print(f"❌ Error fetching word data: {e}")
+        return None
+
+# Format the message
+def format_message(word_data):
+    return f"""
 📘 *Word of the Day*
 
-*Word:* {w}
-🔈 *Pronunciation:* {pronunciation}
-*Part of Speech:* {pos}
+*Word:* {word_data['word']}
+🔈 *Pronunciation:* {word_data['pronunciation']}
+*Part of Speech:* {word_data['part_of_speech']}
 
-*Meaning:* {mean}
+*Meaning:* {word_data['meaning']}
 
-💡 *Example:* {example}
+💡 *Example:* {word_data['example']}
 
-*Synonyms:* {synonyms}
-*Antonyms:* {antonyms}
+*Synonyms:* {word_data['synonyms']}
+*Antonyms:* {word_data['antonyms']}
 """
 
-# Send to Telegram
-url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-payload = {
-    "chat_id": CHAT_ID,
-    "text": message,
-    "parse_mode": "Markdown"
-}
-res = requests.post(url, json=payload)
-print("✅ Message sent:", res.status_code)
+# Send message to Telegram
+def send_to_telegram(chat_id, message, token):
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    res = requests.post(url, json=payload)
+    print("✅ Message sent:", res.status_code)
+
+# --- MAIN LOGIC ---
+
+word = get_random_word()
+word_data = get_word_data(word)
+
+if word_data:
+    message = format_message(word_data)
+    send_to_telegram(CHAT_ID, message, BOT_TOKEN)
+else:
+    print("❌ Could not send message. Word data not available.")
