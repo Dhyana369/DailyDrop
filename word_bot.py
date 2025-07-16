@@ -38,8 +38,8 @@ message = f"""
 
 💡 *Example:* {example}
 
-*Synonyms:* {synonyms}
-*Antonyms:* {antonyms}
+synonyms_line = f"*Synonyms:* {word_data['synonyms']}" if word_data['synonyms'] != 'None found.' else ""
+antonyms_line = f"*Antonyms:* {word_data['antonyms']}" if word_data['antonyms'] != 'None found.' else ""
 """
 
 # Send message to Telegram
