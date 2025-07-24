@@ -1,1 +1,3 @@
-pyTelegramBotAPI
+streamlit
+python-telegram-bot
+requests
