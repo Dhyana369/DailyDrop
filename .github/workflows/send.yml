@@ -1,27 +1,29 @@
-name: Send Word at 8:30 AM IST
+name: Daily Word Bot
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 8:30 AM IST (3:00 AM UTC)
-  workflow_dispatch:
+    - cron: '0 3 * * *' # Runs at 8:30 AM IST (3:00 AM UTC)
+  workflow_dispatch:    # Optional: allows manual trigger
 
 jobs:
-  send-word:
+  send_word:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run script to send word
+      - name: Run bot script
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python send_word.py
+          TELEGRAM_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: python send.py
+
