@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DailyDrop – Word of the Day</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Optional: Use a nice Google Font -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700"/>
+    <style>
+        body {
+            font-family: 'Montserrat', Arial, sans-serif;
+            background: linear-gradient(135deg, #e0e7ff 0%, #f6f8fa 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 520px;
+            margin: 32px auto 0 auto;
+            background: #fff9f6;
+            border: 1.5px solid #3558B0;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px #0001;
+            padding: 24px 16px 60px 16px;
+        }
+        .logo {
+            height: 48px; display: block; margin: 0 auto 14px auto;
+        }
+        h1 {
+            color: #3558B0;
+            text-align: center;
+            font-size: 2.1rem;
+            margin-top: 0;
+            letter-spacing: .04em;
+        }
+        #word-block {
+            background: #eef2fa;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 1px 4px #0001;
+        }
+        #word-block h2 {
+            color: #1d52a6;
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+        #word-block p {
+            margin: 8px 0;
+            font-size: 1.1rem;
+        }
+        b {
+            color: #123d51;
+        }
+        audio {
+            width: 100%;
+            margin-top: 12px;
+        }
+        #history-controls {
+            text-align: center;
+            margin-top: 28px;
+        }
+        #history-controls button, #share-btn {
+            background: #3558B0;
+            color: #fff;
+            font-size: 1rem;
+            border: none;
+            border-radius: 7px;
+            padding: 7px 16px;
+            margin: 3px 5px;
+            cursor: pointer;
+            transition: background .2s;
+        }
+        #history-controls button:hover, #share-btn:hover {
+            background: #425bd1;
+        }
+        #copy-confirm {
+            color: #13a05a;
+            font-size: 1.05em;
+            margin-left: 10px;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .container {
+                max-width: 98vw;
+                margin: 10px auto 0 auto;
+                padding: 10px 4vw 40px 4vw;
+                border-radius: 10px;
+            }
+            h1 { font-size: 1.6rem; }
+            #word-block { padding: 10px; }
+        }
+        footer {
+            margin: 40px auto 14px auto;
+            text-align: center;
+            color: #7884a1;
+            font-size: .99rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="logo.png" alt="DailyDrop Logo" class="logo">
+        <h1>Word of the Day</h1>
+        <div id="word-block" aria-live="polite">Loading word...</div>
+
+        <div id="history-controls">
+            <button onclick="loadWord(0)">Today</button>
+            <button onclick="loadWord(1)">Yesterday</button>
+            <button onclick="loadWord(2)">2 Days Ago</button>
+        </div>
+        <div style="text-align:center; margin-top:18px;">
+            <button id="share-btn" onclick="shareWord()">Share</button>
+            <span id="copy-confirm">Copied!</span>
+        </div>
+        <hr>
+            <h3 style="text-align:center;">Subscribe to DailyDrop – Get the Word in Your Inbox</h3>
+            <form id="signup-form" style="text-align:center; margin:15px 0;">
+                <input type="email" name="email" id="email-inp" placeholder="Your email" required style="padding:5px; width:220px; border-radius:5px;">
+                <button type="submit" style="padding:5px 12px; border-radius:5px; background:#3558B0; color:white;">Subscribe</button>
+                <span id="signup-msg" style="margin-left:13px; color:#13a05a;"></span>
+            </form>
+
+    </div>
+    <footer>
+        &copy; 2025 Dhyana &bull; Powered by DictionaryAPI.dev &bull; Built with Flask
+    </footer>
+    <script>
+    function displayWord(data) {
+        document.getElementById('word-block').innerHTML = `
+            <h2>${data.word}</h2>
+            <p><b>Part of Speech:</b> ${data.part_of_speech || '—'}</p>
+            <p><b>Definition:</b> ${data.definition || '—'}</p>
+            <p><b>Example:</b> ${data.example || '—'}</p>
+            <p><b>Synonyms:</b> ${data.synonyms && data.synonyms.length ? data.synonyms.join(', ') : '—'}</p>
+            <p><b>Antonyms:</b> ${data.antonyms && data.antonyms.length ? data.antonyms.join(', ') : '—'}</p>
+            <audio controls style="margin-top:10px;">
+                <source src="${data.audio_url}" type="audio/mpeg">
+                Your browser does not support audio playback.
+            </audio>
+        `;
+        document.getElementById("signup-form").addEventListener("submit", function(e){
+            e.preventDefault();
+            var email = document.getElementById("email-inp").value;
+            var formData = new FormData();
+            formData.append("email", email);
+            fetch("/subscribe", { method: "POST", body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("signup-msg").innerText = data.message || data.error || "Error.";
+                })
+                .catch(err => {
+                    document.getElementById("signup-msg").innerText = "Subscription failed.";
+                });
+            });
+
+    }
+    function loadWord(daysAgo) {
+        fetch('/word-of-the-day' + (daysAgo ? '?days_ago=' + daysAgo : ''))
+            .then(res => res.json())
+            .then(displayWord)
+            .catch(() => document.getElementById('word-block').innerText = 'Could not load word.');
+    }
+    function shareWord() {
+        const text = document.getElementById('word-block').innerText;
+        if (navigator.share) {
+            navigator.share({ title: 'DailyDrop Word of the Day', text });
+        } else {
+            navigator.clipboard.writeText(text);
+            const msg = document.getElementById('copy-confirm');
+            msg.style.display = 'inline';
+            setTimeout(() => { msg.style.display = 'none'; }, 1100);
+        }
+    }
+    window.onload = () => loadWord(0);
+    </script>
+</body>
+</html>
