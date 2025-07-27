@@ -10,9 +10,9 @@ import os
 
 MY_EMAIL = os.environ["MY_EMAIL"]
 APP_PASSWORD = os.environ["APP_PASSWORD"]
-MY_NAME = "DailyDrop Bot"  # You can keep this hardcoded or move to a secret if you wish
+MY_NAME = "DailyDrop Bot"
 SUBSCRIBERS_FILE = "subscribers.txt"
-SITE_BASEURL = "https://your-production-url.com"  # Or keep as localhost if testing only
+SITE_BASEURL = "https://Dhyana.pythonanywhere.com"
 
 def send_emails():
     if not os.path.exists(SUBSCRIBERS_FILE):
@@ -26,7 +26,8 @@ def send_emails():
 
     word_data = get_word_of_the_day(0)
     audio_url = SITE_BASEURL + word_data['audio_url']
-
+    frontend_url = SITE_BASEURL + "/frontend"
+    
     body = f"""
 <div style="font-family: Arial, Helvetica, sans-serif; color: #000;">
   <h2 style="color:#000;">{word_data['word'].title()}</h2>
