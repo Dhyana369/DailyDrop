@@ -1,0 +1,100 @@
+body {
+    margin: 0;
+    font-family: 'Garamond', sans-serif;
+    background: linear-gradient(to right, #e0c3fc, #8ec5fc);
+    color: #333;
+}
+
+.main-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.brand {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #4B0082;
+}
+
+.tagline {
+    font-size: 1.2rem;
+    color: #444;
+}
+
+.card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+.today-card h2 {
+    color: #4B0082;
+}
+
+.week-section h2, .subscribe-section h2 {
+    color: #4B0082;
+}
+
+.week-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.week-card {
+    background: #fafafa;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.subscribe-section {
+    background: #f9f6ff;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.subscribe-section form {
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.subscribe-section input[type="email"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px 0 0 10px;
+    outline: none;
+    flex: 1;
+    max-width: 300px;
+}
+
+.subscribe-section button {
+    padding: 10px 20px;
+    background: #4B0082;
+    color: white;
+    border: none;
+    border-radius: 0 10px 10px 0;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.subscribe-section button:hover {
+    background: #360060;
+}
+
+.small-note {
+    font-size: 0.85rem;
+    margin-top: 10px;
+    color: #555;
+}

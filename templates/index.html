@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DailyDrop - Word of the Day</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <div class="main-container">
+    <header>
+      <h1 class="brand">DailyDrop</h1>
+      <p class="tagline">Discover a new word every day</p>
+    </header>
+
+    <section class="card today-card">
+      <h2 id="word">Loading...</h2>
+      <p><strong>Part of Speech:</strong> <span id="part">—</span></p>
+      <p><strong>Definition:</strong> <span id="definition"></span></p>
+      <p><strong>Example:</strong> <span id="example"></span></p>
+      <p><strong>Synonyms:</strong> <span id="synonyms"></span></p>
+      <p><strong>Antonyms:</strong> <span id="antonyms"></span></p>
+      <audio id="audio" controls style="display:none;"></audio>
+    </section>
+
+    <section class="subscribe-section">
+      <h2>Subscribe for Daily Words</h2>
+      <form id="subscribe-form" method="POST" action="/subscribe">
+        <input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+          autocomplete="email"
+        />
+        <button type="submit">Subscribe</button>
+      </form>
+      <p class="small-note" id="subscribe-message">Get today’s word straight to your inbox.</p>
+    </section>
+
+    <section class="week-section">
+      <h2>This Week's Words</h2>
+      <div id="week-words" class="week-container"></div>
+    </section>
+  </div>
+
+  <!-- Put your JS right before closing body tag -->
+  <script>
+    // Wait for DOM fully loaded
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("DOM fully loaded and parsed");
+      const form = document.getElementById("subscribe-form");
+      const messageEl = document.getElementById("subscribe-message");
+
+      if (!form) {
+        console.error("Subscribe form not found!");
+        return;
+      }
+      console.log("Subscribe form found:", form);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        console.log("Submit intercepted");
+        messageEl.style.color = "#333";
+        messageEl.innerText = "Subscribing...";
+
+        const formData = new FormData(form);
+
+        try {
+          const response = await fetch(form.action, {
+            method: form.method,
+            body: formData,
+          });
+
+          console.log("Response received:", response);
+
+          if (!response.ok) {
+            messageEl.style.color = "red";
+            messageEl.innerText = "Subscription failed. Please try again.";
+            return;
+          }
+
+          const data = await response.json();
+          console.log("Response JSON:", data);
+
+          if (data.status === "success") {
+            messageEl.style.color = "green";
+            messageEl.innerText = data.message;
+            form.reset();
+          } else {
+            messageEl.style.color = "red";
+            messageEl.innerText = data.message || "Subscription failed.";
+          }
+        } catch (err) {
+          console.error("Fetch error:", err);
+          messageEl.style.color = "red";
+          messageEl.innerText = "Network error. Please try again.";
+        }
+      });
+    });
+
+    // Your existing loadToday and loadWeek functions here
+    async function loadToday() {
+      const res = await fetch("/today");
+      const data = await res.json();
+      document.getElementById("word").innerText = data.word || "—";
+      document.getElementById("part").innerText = "noun";
+      document.getElementById("definition").innerText = data.meaning || "—";
+      document.getElementById("example").innerText = data.example || "—";
+      document.getElementById("synonyms").innerText = data.synonyms || "—";
+      document.getElementById("antonyms").innerText = data.antonyms || "—";
+      if (data.audio_url) {
+        const audio = document.getElementById("audio");
+        audio.src = data.audio_url;
+        audio.style.display = "block";
+      }
+    }
+
+    async function loadWeek() {
+      const res = await fetch("/week");
+      const data = await res.json();
+      const container = document.getElementById("week-words");
+      container.innerHTML = "";
+      data.forEach((item) => {
+        const div = document.createElement("div");
+        div.classList.add("week-card");
+        div.innerHTML = `<strong>${item.word}</strong>: ${item.meaning}`;
+        container.appendChild(div);
+      });
+    }
+
+    loadToday();
+    loadWeek();
+  </script>
+</body>
+</html>
