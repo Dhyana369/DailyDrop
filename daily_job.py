@@ -3,7 +3,7 @@ from fetch_word import fetch_and_save_word, get_latest_word
 from send_email import send_email_to_all
 
 logging.basicConfig(
-    filename='/home/Dhyana/daily_drop/daily_drop.log',
+    filename='daily_drop.log',
     level=logging.INFO,
     format='%(asctime)s %(levelname)s:%(message)s'
 )

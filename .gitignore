@@ -3,3 +3,6 @@ db.sqlite3
 __pycache__/
 *.pyc
 daily_drop.log
+venv/
+.vscode/
+Demo video.mp4
