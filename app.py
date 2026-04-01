@@ -1,30 +1,34 @@
-from flask import Flask, jsonify, render_template, request, redirect
-import sqlite3
-import os
-import smtplib
-from email.mime.text import MIMEText
-from dotenv import load_dotenv
-from datetime import date, timedelta
+from flask import Flask, jsonify, render_template, request, redirect # web framework
+import sqlite3 # database, stores words and subscribers
+import os # file path and environment varables
+import smtplib # sending emails
+from email.mime.text import MIMEText 
+from dotenv import load_dotenv # loads .env file
+from datetime import date, timedelta # works with dates
 
+# Environment setup
 load_dotenv()
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_PASSWORD = os.getenv("GMAIL_PASSWORD")
 
+# Database path setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "db.sqlite3")
 
-app = Flask(__name__)
 
+# create flask app
+app = Flask(__name__) # initializing web app
 
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+# Database connection function
+def get_db_connection(): 
+    conn = sqlite3.connect(DB_PATH) # opens db connection
+    conn.row_factory = sqlite3.Row # allows accessing columns like dictionary
     return conn
 
-
+# initializing database
 def init_db():
-    conn = get_db_connection()
-    conn.execute("""
+    conn = get_db_connection() # creates tables
+    conn.execute("""  
         CREATE TABLE IF NOT EXISTS words (
             id             INTEGER PRIMARY KEY AUTOINCREMENT,
             word           TEXT UNIQUE,
@@ -44,7 +48,7 @@ def init_db():
             email TEXT UNIQUE
         )
     """)
-    # Add new columns if upgrading from old schema
+    # Add new columns if upgrading from old schema prevents breaking old database
     for col, definition in [("part_of_speech", "TEXT DEFAULT ''"), ("phonetic", "TEXT DEFAULT ''")]:
         try:
             conn.execute(f"ALTER TABLE words ADD COLUMN {col} {definition}")
@@ -53,23 +57,23 @@ def init_db():
     conn.commit()
     conn.close()
 
-
+# Home page
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("index.html") # loads frontend page
 
-
+# Get today's word
 @app.route("/today")
 def get_today():
-    today = date.today().isoformat()
+    today = date.today().isoformat() # get today's date
     conn = get_db_connection()
-    word = conn.execute("SELECT * FROM words WHERE created_at = ? LIMIT 1", (today,)).fetchone()
+    word = conn.execute("SELECT * FROM words WHERE created_at = ? LIMIT 1", (today,)).fetchone() # fetchs today's word
     conn.close()
     if word:
-        return jsonify(dict(word))
+        return jsonify(dict(word)) # converts db row to json, frontend or apps expect data in json format
     return jsonify({"message": "No word found for today"})
 
-
+# get last week words
 @app.route("/week")
 def get_week():
     conn = get_db_connection()
@@ -82,15 +86,15 @@ def get_week():
     conn.close()
     return jsonify([dict(w) for w in words])
 
-
+# Subscribe feature 
 @app.route("/subscribe", methods=["POST"])
 def subscribe():
-    email = request.form.get("email", "").strip()
-    if not email:
+    email = request.form.get("email", "").strip() # get email
+    if not email: # validate
         return jsonify({"status": "error", "message": "Email is required."}), 400
     try:
         conn = get_db_connection()
-        conn.execute("INSERT INTO subscribers (email) VALUES (?)", (email,))
+        conn.execute("INSERT INTO subscribers (email) VALUES (?)", (email,)) # store in db
         conn.commit()
         conn.close()
 
@@ -109,25 +113,27 @@ https://dhyana.pythonanywhere.com/unsubscribe?email={email}
         msg["Subject"] = "Welcome to DailyDrop!"
         msg["From"] = GMAIL_USER
         msg["To"] = email
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(GMAIL_USER, GMAIL_PASSWORD)
-            server.sendmail(GMAIL_USER, email, msg.as_string())
+        # sending confirmation email
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:  # uses gmail smtp server
+            server.login(GMAIL_USER, GMAIL_PASSWORD) # authenticate
+            server.sendmail(GMAIL_USER, email, msg.as_string()) # sends email
 
         return jsonify({"status": "success", "message": "You're subscribed! Check your inbox."})
 
-    except sqlite3.IntegrityError:
+    # error handling
+    except sqlite3.IntegrityError: # prevents duplicate subscriptions
         return jsonify({"status": "error", "message": "You're already subscribed."})
-    except Exception as e:
+    except Exception as e: # prevents crash
         print(f"Subscription error: {e}")
         return jsonify({"status": "error", "message": "Something went wrong. Try again."}), 500
 
-
+# unsubscribe feature
 @app.route("/unsubscribe")
 def unsubscribe():
-    email = request.args.get("email", "").strip()
+    email = request.args.get("email", "").strip() # gets email
     if email:
         conn = get_db_connection()
-        conn.execute("DELETE FROM subscribers WHERE email = ?", (email,))
+        conn.execute("DELETE FROM subscribers WHERE email = ?", (email,)) # deletes from db
         conn.commit()
         conn.close()
         return f"""
